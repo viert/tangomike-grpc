@@ -14,7 +14,7 @@ fn extract_key(meta: &MetadataMap, key: &str) -> Result<String, Status> {
       let res = value.to_str();
       match res {
         Ok(value) => Ok(value.into()),
-        Err(_) => Err(Status::invalid_argument(&format!("invalid {key} header"))),
+        Err(_) => Err(Status::invalid_argument(format!("invalid {key} header"))),
       }
     }
     None => Err(Status::invalid_argument(format!("{key} header is missing"))),

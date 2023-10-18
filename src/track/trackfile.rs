@@ -10,6 +10,7 @@ use std::{
   ptr::slice_from_raw_parts,
 };
 
+#[allow(clippy::size_of_in_element_count)]
 fn to_raw<T: Sized>(obj: &T) -> Vec<u8> {
   let slice = slice_from_raw_parts(obj, size_of::<T>()) as *const [u8];
   let slice = unsafe { &*slice };
@@ -127,7 +128,7 @@ impl TrackFile {
   fn read_file_header(&self) -> Result<Header, TrackFileError> {
     let mut buf = Self::make_header_buf();
     self.file.read_at(&mut buf, 0)?;
-    Ok(from_raw(&buf, "header")?)
+    from_raw(&buf, "header")
   }
 
   fn write_file_header(&mut self, header: &Header) -> Result<(), TrackFileError> {
@@ -161,7 +162,7 @@ impl TrackFile {
   }
 
   pub fn destroy(self) -> Result<(), TrackFileError> {
-    std::fs::remove_file(&self.path)?;
+    std::fs::remove_file(self.path)?;
     Ok(())
   }
 

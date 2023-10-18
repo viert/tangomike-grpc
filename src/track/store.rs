@@ -23,7 +23,7 @@ impl TrackStore {
     let mut path = PathBuf::from(&self.folder);
     for i in 0..NESTING_LEVEL {
       let subkey = &flight_id[i * SUBKEY_LENGTH..(i + 1) * SUBKEY_LENGTH];
-      path = path.join(format!("{subkey}"));
+      path = path.join(subkey);
     }
     path
   }

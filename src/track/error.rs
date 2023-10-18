@@ -45,8 +45,8 @@ impl From<std::io::Error> for TrackFileError {
 impl From<TrackFileError> for Status {
   fn from(value: TrackFileError) -> Self {
     match &value {
-      TrackFileError::NotFound(err) => Status::not_found(format!("{err}")),
-      _ => Status::internal(format!("{value}")),
+      TrackFileError::NotFound(err) => Status::not_found(err.to_string()),
+      _ => Status::internal(value.to_string()),
     }
   }
 }

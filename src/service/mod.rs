@@ -15,7 +15,7 @@ use crate::{
   util::proxy_requests,
 };
 use chrono::Utc;
-use log::{debug, error, info};
+use log::{error, info};
 use std::{pin::Pin, sync::Arc, time::Duration};
 use tokio::{
   sync::mpsc::{self, error::TryRecvError},
