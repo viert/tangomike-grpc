@@ -6,7 +6,7 @@ use std::{
   io::{Seek, SeekFrom, Write},
   mem::size_of,
   os::unix::prelude::FileExt,
-  path::PathBuf,
+  path::{Path, PathBuf},
   ptr::slice_from_raw_parts,
 };
 
@@ -40,8 +40,8 @@ pub struct TrackFile {
 }
 
 impl TrackFile {
-  pub fn new(path: PathBuf, flight_id: &str) -> Result<Self, TrackFileError> {
-    let res = Self::open(path.clone(), flight_id);
+  pub fn new<P: AsRef<Path>>(path: P, flight_id: &str) -> Result<Self, TrackFileError> {
+    let res = Self::open(path.as_ref());
     match res {
       Ok(tf) => Ok(tf),
       Err(err) => match err {
@@ -51,7 +51,7 @@ impl TrackFile {
     }
   }
 
-  pub fn create(path: PathBuf, flight_id: &str) -> Result<Self, TrackFileError> {
+  pub fn create<P: AsRef<Path>>(path: P, flight_id: &str) -> Result<Self, TrackFileError> {
     let mut file = OpenOptions::new()
       .create(true)
       .write(true)
@@ -63,20 +63,26 @@ impl TrackFile {
     Ok(Self {
       flight_id: flight_id.to_owned(),
       file,
-      path,
+      path: path.as_ref().to_path_buf(),
     })
   }
 
-  pub fn open(path: PathBuf, flight_id: &str) -> Result<Self, TrackFileError> {
+  pub fn open<P: AsRef<Path>>(path: P) -> Result<Self, TrackFileError> {
     let res = OpenOptions::new().write(true).read(true).open(&path);
+    let path = path.as_ref().to_path_buf();
     match res {
       Ok(file) => {
-        let tf = Self {
-          flight_id: flight_id.to_owned(),
+        let mut tf = Self {
+          flight_id: Default::default(),
           file,
           path,
         };
+
         tf.check()?;
+
+        let header = tf.read_file_header()?;
+        tf.flight_id = header.get_flight_id();
+
         Ok(tf)
       }
       Err(err) => match err.kind() {

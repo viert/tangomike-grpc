@@ -6,13 +6,23 @@ use log::LevelFilter;
 use serde::Deserialize;
 use std::path::Path;
 
+const DEFAULT_LEVEL: fn() -> LevelFilter = || LevelFilter::Debug;
+const DEFAULT_BIND: fn() -> String = || "127.0.0.1:9100".to_owned();
+const DEFAULT_TRACK_FOLDER: fn() -> String = || "tracks".to_owned();
+
 #[derive(Debug, Deserialize)]
 pub struct TrackConfig {
+  #[serde(default = "DEFAULT_TRACK_FOLDER")]
   pub folder: String,
 }
 
-const DEFAULT_LEVEL: fn() -> LevelFilter = || LevelFilter::Debug;
-const DEFAULT_BIND: fn() -> String = || "127.0.0.1:9100".to_owned();
+impl Default for TrackConfig {
+  fn default() -> Self {
+    Self {
+      folder: DEFAULT_TRACK_FOLDER(),
+    }
+  }
+}
 
 #[derive(Debug, Deserialize)]
 pub struct LogConfig {
@@ -44,6 +54,7 @@ impl Default for ServiceConfig {
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
+  #[serde(default)]
   pub track: TrackConfig,
   #[serde(default)]
   pub log: LogConfig,

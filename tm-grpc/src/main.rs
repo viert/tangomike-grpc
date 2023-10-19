@@ -1,7 +1,7 @@
 use clap::Parser;
 use log::{error, info};
 use simplelog::{ColorChoice, Config, TermLogger, TerminalMode};
-use tangomike_grpc::{
+use tm_grpc::{
   config::read_in_config,
   geodata::GeoData,
   service::{tangomike::track_server::TrackServer, TrackService},

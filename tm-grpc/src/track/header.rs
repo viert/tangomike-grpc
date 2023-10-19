@@ -7,10 +7,10 @@ const HEADER_VERSION: u64 = 1;
 #[derive(Debug, Clone)]
 #[repr(C)]
 pub struct Header {
-  magic: u64,
-  version: u64,
-  updated_at: u64,
-  count: u64,
+  pub magic: u64,
+  pub version: u64,
+  pub updated_at: u64,
+  pub count: u64,
   flight_id: FixedStr<36>,
   departure: FixedStr<8>,
   arrival: FixedStr<8>,
