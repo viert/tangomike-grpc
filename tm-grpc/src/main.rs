@@ -11,7 +11,7 @@ use tonic::transport::Server;
 
 #[derive(Parser, Debug)]
 struct Args {
-  #[arg(short, default_value = "/etc/tangomike/tangomike.toml")]
+  #[arg(short, default_value = "/etc/tangomike/tm-grpc.toml")]
   config: String,
 }
 

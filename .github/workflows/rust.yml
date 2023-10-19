@@ -1,0 +1,51 @@
+name: Rust
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print rustc version
+        run: rustc --version
+      - name: Install build dependencies
+        run: |
+          sudo /usr/bin/apt update && sudo /usr/bin/apt install -y wget zip libssl-dev libcrypto++-dev docker
+          sudo /bin/mkdir /protobuf/
+          sudo chown $(whoami) /protobuf/
+          cd /protobuf/
+          wget https://github.com/protocolbuffers/protobuf/releases/download/v23.4/protoc-23.4-linux-x86_64.zip
+          unzip protoc-23.4-linux-x86_64.zip
+          sudo mv /protobuf/bin/protoc /usr/sbin/
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry/cache
+            target/release
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      - name: Build
+        run: cargo build --release
+      - name: Run tests
+        run: cargo test --release
+      - name: Docker build
+        env:
+          DOCKER_IMAGE: ${{ secrets.DOCKER_IMAGE }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          DOCKER_IMAGE_TAG: "2.0.0"
+        run: |
+          docker build -t ${DOCKER_IMAGE}:${DOCKER_IMAGE_TAG} .
+          docker tag ${DOCKER_IMAGE}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE}:latest
+          docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+          docker push ${DOCKER_IMAGE}:${DOCKER_IMAGE_TAG}
+          docker push ${DOCKER_IMAGE}:latest

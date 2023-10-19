@@ -1,5 +1,5 @@
 [track]
-folder = "tracks"
+folder = "/var/lib/tangomike/tracks"
 
 [log]
 level = "debug"
