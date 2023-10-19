@@ -73,4 +73,9 @@ impl Header {
     let arr = &self.arrival;
     arr.into()
   }
+
+  pub fn get_flight_id(&self) -> String {
+    let fid = &self.flight_id;
+    fid.into()
+  }
 }

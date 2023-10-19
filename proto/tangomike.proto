@@ -72,8 +72,11 @@ message TrackRequest {
 }
 
 message TrackResponse {
-  repeated TrackPoint points = 1;
-  repeated TouchDown touchdowns = 2;
+  string flight_id = 1;
+  string departure = 2;
+  string arrival = 3;
+  repeated TrackPoint points = 4;
+  repeated TouchDown touchdowns = 5;
 }
 
 service Track {

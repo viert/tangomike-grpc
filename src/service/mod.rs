@@ -163,7 +163,12 @@ impl Track for TrackService {
       }
     }
 
+    let header = tf.get_header()?;
+
     let resp = TrackResponse {
+      flight_id: header.get_flight_id(),
+      departure: header.get_departure(),
+      arrival: header.get_arrival(),
       points: points.into_iter().map(|p| p.into()).collect(),
       touchdowns: touchdowns.into_iter().map(|t| t.into()).collect(),
     };
