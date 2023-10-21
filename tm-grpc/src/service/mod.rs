@@ -54,7 +54,6 @@ impl Track for TrackService {
     info!("[{remote}] client connected");
 
     let meta: FlightMeta = request.metadata().try_into()?;
-    let mut seq_number = 1;
 
     let stream = request.into_inner();
     let mut tf = self.store.open_or_create(&meta.flight_id)?;
@@ -76,6 +75,7 @@ impl Track for TrackService {
             sleep(Duration::from_millis(10)).await;
           },
           Ok(msg) => {
+            let request_id = msg.request_id;
             match msg.union.unwrap() {
               Union::TrackMessage(msg) => {
                 let union = &msg.union;
@@ -113,7 +113,7 @@ impl Track for TrackService {
                 tf.append(&entry)?;
                 let msg = TrackStreamResponse {
                   ack: Some(TrackStreamAck {
-                    seq_number,
+                    request_id,
                     echo_response: None
                   })
                 };
@@ -128,14 +128,13 @@ impl Track for TrackService {
                 };
                 let msg = TrackStreamResponse {
                   ack: Some(TrackStreamAck {
-                    seq_number,
+                    request_id,
                     echo_response: Some(resp)
                   })
                 };
                 yield msg;
               },
             }
-            seq_number += 1;
           }
         }
       }

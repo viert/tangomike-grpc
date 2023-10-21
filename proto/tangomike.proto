@@ -52,14 +52,15 @@ message EchoResponse {
 }
 
 message TrackStreamAck {
-  int64 seq_number = 1;
+  uint64 request_id = 1;
   EchoResponse echo_response = 2;
 }
 
 message TrackStreamRequest {
+  uint64 request_id = 1;
   oneof union {
-    TrackMessage track_message = 1;
-    EchoRequest echo_request = 2;
+    TrackMessage track_message = 2;
+    EchoRequest echo_request = 3;
   }
 }
 
