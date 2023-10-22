@@ -21,6 +21,8 @@ serde = { version = "1.0.188", features = ["derive"] }
 serde_json = "1.0.105"
 figment = { version = "0.10.11", features = ["toml"] }
 clap = { version = "4.4.6", features = ["derive"] }
+haversine = "0.2.1"
+tempfile = "3.8.0"
 
 [build-dependencies]
 tonic-build = "0.9.2"

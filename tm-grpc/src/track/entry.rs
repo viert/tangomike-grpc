@@ -1,6 +1,15 @@
 use crate::service::tangomike::{self, track_message::Union, TrackMessage};
 
-#[derive(Debug, Clone)]
+impl From<&TrackPoint> for haversine::Location {
+  fn from(value: &TrackPoint) -> Self {
+    Self {
+      latitude: value.lat,
+      longitude: value.lng,
+    }
+  }
+}
+
+#[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct TrackPoint {
   pub ts: u64,
@@ -45,7 +54,6 @@ impl From<TrackPoint> for tangomike::TrackPoint {
       on_rwy: value.on_rwy,
       wind_vel: value.wind_vel,
       wind_dir: value.wind_dir,
-      distance: value.distance,
     }
   }
 }
@@ -107,7 +115,7 @@ impl From<TrackMessage> for TrackFileEntry {
         on_rwy: point.on_rwy,
         wind_vel: point.wind_vel,
         wind_dir: point.wind_dir,
-        distance: point.distance,
+        distance: 0.0,
       }),
       Union::TouchDown(td) => Self::TouchDown(TouchDown {
         ts: td.ts,

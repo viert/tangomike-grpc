@@ -566,6 +566,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7dfda62a12f55daeae5015f81b0baea145391cb4520f86c248fc615d72640d12"
 
 [[package]]
+name = "haversine"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef9482608b217d89a3caeb5fe2336a0491d1dc0be5d89c67125ea514b1f6a660"
+
+[[package]]
 name = "heapless"
 version = "0.7.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1602,12 +1608,13 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tm-grpc"
-version = "2.0.1"
+version = "2.1.0"
 dependencies = [
  "async-stream",
  "chrono",
  "clap",
  "figment",
+ "haversine",
  "log",
  "prost 0.11.9",
  "prost-types 0.12.1",
@@ -1616,6 +1623,7 @@ dependencies = [
  "serde",
  "serde_json",
  "simplelog",
+ "tempfile",
  "tokio",
  "tokio-stream",
  "tonic",
@@ -1835,7 +1843,7 @@ dependencies = [
 
 [[package]]
 name = "trackdump"
-version = "2.0.1"
+version = "2.1.0"
 dependencies = [
  "chrono",
  "clap",

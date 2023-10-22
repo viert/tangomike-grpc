@@ -1,5 +1,10 @@
-use super::{entry::TrackFileEntry, error::TrackFileError, header::Header};
+use super::{
+  entry::{TrackFileEntry, TrackPoint},
+  error::TrackFileError,
+  header::Header,
+};
 use chrono::{DateTime, Utc};
+use haversine::Units;
 use std::{
   fmt::Display,
   fs::{File, OpenOptions},
@@ -9,6 +14,8 @@ use std::{
   path::{Path, PathBuf},
   ptr::slice_from_raw_parts,
 };
+
+const NM_IN_KM: f64 = 0.539957;
 
 #[allow(clippy::size_of_in_element_count)]
 fn to_raw<T: Sized>(obj: &T) -> Vec<u8> {
@@ -37,6 +44,7 @@ pub struct TrackFile {
   flight_id: String,
   file: File,
   path: PathBuf,
+  last_point: Option<TrackPoint>,
 }
 
 impl TrackFile {
@@ -64,6 +72,7 @@ impl TrackFile {
       flight_id: flight_id.to_owned(),
       file,
       path: path.as_ref().to_path_buf(),
+      last_point: None,
     })
   }
 
@@ -76,12 +85,14 @@ impl TrackFile {
           flight_id: Default::default(),
           file,
           path,
+          last_point: None,
         };
 
         tf.check()?;
 
         let header = tf.read_file_header()?;
         tf.flight_id = header.get_flight_id();
+        tf.last_point = tf.get_last_point()?;
 
         Ok(tf)
       }
@@ -93,6 +104,20 @@ impl TrackFile {
         _ => Err(err.into()),
       },
     }
+  }
+
+  fn get_last_point(&self) -> Result<Option<TrackPoint>, TrackFileError> {
+    let header = self.get_header()?;
+    let mut idx = header.count as i64 - 1;
+    while idx >= 0 {
+      let entry = self.read_at((header.count - 1) as usize)?;
+      match entry {
+        TrackFileEntry::TrackPoint(tp) => return Ok(Some(tp.clone())),
+        TrackFileEntry::TouchDown(_) => {}
+      }
+      idx -= 1;
+    }
+    Ok(None)
   }
 
   fn check(&self) -> Result<(), TrackFileError> {
@@ -197,7 +222,6 @@ impl TrackFile {
   pub fn append(&mut self, e: &TrackFileEntry) -> Result<(), TrackFileError> {
     let header = self.read_file_header()?;
     let count = header.count() as usize;
-
     let offset = if count < 2 {
       // if less than 2 points exist, append only
       0
@@ -219,7 +243,24 @@ impl TrackFile {
       self.inc()?
     }
 
-    let data = to_raw(e);
+    let data = match e {
+      TrackFileEntry::TrackPoint(tp) => {
+        // replace trackpoint with a trackpoint with distance calculated;
+        let last_point = self.last_point.as_ref().unwrap_or(tp).clone();
+        let accumulated_distance = last_point.distance
+          + haversine::distance((&last_point).into(), tp.into(), Units::Kilometers) * NM_IN_KM;
+
+        let mut new_point = tp.clone();
+        new_point.distance = accumulated_distance;
+
+        self.last_point = Some(new_point.clone());
+
+        let e = TrackFileEntry::TrackPoint(new_point);
+        to_raw(&e)
+      }
+      TrackFileEntry::TouchDown(_) => to_raw(e),
+    };
+
     self.file.seek(SeekFrom::End(offset))?;
     self.file.write_all(&data)?;
     Ok(())
@@ -290,5 +331,58 @@ impl TrackFile {
 
   pub fn get_header(&self) -> Result<Header, TrackFileError> {
     self.read_file_header()
+  }
+}
+
+#[cfg(test)]
+pub mod tests {
+
+  use super::*;
+  use tempfile::NamedTempFile;
+
+  #[test]
+  fn test_distance() -> Result<(), Box<dyn std::error::Error>> {
+    let temp = NamedTempFile::new()?;
+    let mut tf = TrackFile::create(temp.path(), "E2B8A9FF-123B-49AB-B330-44CEAB68D465")?;
+
+    let mut tp = TrackPoint::default();
+    tp.lng = -0.4947472;
+    tp.lat = 51.4668786;
+    let e = TrackFileEntry::TrackPoint(tp);
+    tf.append(&e)?;
+
+    let mut tp = TrackPoint::default();
+    tp.lng = -0.1846378;
+    tp.lat = 51.1536621;
+    let e = TrackFileEntry::TrackPoint(tp);
+    tf.append(&e)?;
+
+    let last = tf.read_at(1)?;
+
+    match last {
+      TrackFileEntry::TrackPoint(tp) => {
+        let apr_distance = (tp.distance * 1000.0).round() as u64;
+        assert_eq!(apr_distance, 22116) // 22.1159 nm between Heathrow and Gatwick
+      }
+      TrackFileEntry::TouchDown(_) => assert!(false),
+    }
+
+    let mut tp = TrackPoint::default();
+    tp.lng = -0.4947472;
+    tp.lat = 51.4668786;
+    let e = TrackFileEntry::TrackPoint(tp);
+    tf.append(&e)?;
+
+    let last = tf.read_at(2)?;
+
+    match last {
+      TrackFileEntry::TrackPoint(tp) => {
+        let apr_distance = (tp.distance * 1000.0).round() as u64;
+        assert_eq!(apr_distance, 44232) // 2 * 22.1159 nm Heathrow to Gatwick and back
+      }
+      TrackFileEntry::TouchDown(_) => assert!(false),
+    }
+
+    Ok(())
   }
 }

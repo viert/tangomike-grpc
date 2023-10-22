@@ -21,7 +21,6 @@ message TrackPoint {
   bool    on_rwy = 16;
   double  wind_vel = 17;
   double  wind_dir = 18;
-  double  distance = 19;
 }
 
 message TouchDown {
