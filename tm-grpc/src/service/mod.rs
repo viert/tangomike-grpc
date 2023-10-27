@@ -5,8 +5,9 @@ pub mod tangomike {
 use self::{
   meta::FlightMeta,
   tangomike::{
-    track_message, track_server::Track, track_stream_request::Union, EchoResponse, TrackRequest,
-    TrackResponse, TrackStreamAck, TrackStreamRequest, TrackStreamResponse,
+    track_message, track_server::Track, upload_track_stream_request::Union,
+    DownloadTrackStreamRequest, EchoResponse, TrackMessage, TrackRequest, TrackResponse,
+    UploadTrackStreamAck, UploadTrackStreamRequest, UploadTrackStreamResponse,
   },
 };
 use crate::{
@@ -42,13 +43,58 @@ impl TrackService {
 #[tonic::async_trait]
 impl Track for TrackService {
   #[doc = " Server streaming response type for the TrackStream method."]
-  type TrackStreamStream =
-    Pin<Box<dyn Stream<Item = Result<TrackStreamResponse, Status>> + Send + 'static>>;
+  type UploadTrackStreamStream =
+    Pin<Box<dyn Stream<Item = Result<UploadTrackStreamResponse, Status>> + Send + 'static>>;
+  type DownloadTrackStreamStream =
+    Pin<Box<dyn Stream<Item = Result<TrackMessage, Status>> + Send + 'static>>;
 
-  async fn track_stream(
+  async fn download_track_stream(
     &self,
-    request: Request<Streaming<TrackStreamRequest>>,
-  ) -> Result<Response<Self::TrackStreamStream>, Status> {
+    request: Request<DownloadTrackStreamRequest>,
+  ) -> Result<Response<Self::DownloadTrackStreamStream>, Status> {
+    let req = request.into_inner();
+    let tf = self.store.open(&req.flight_id)?;
+    let output = async_stream::try_stream! {
+      let mut count = tf.count()? as usize;
+      let mut idx = 0;
+      while idx < count {
+        let entry = tf.read_at(idx)?;
+
+        let ts = match &entry {
+          TrackFileEntry::TrackPoint(tp) => tp.ts,
+          TrackFileEntry::TouchDown(td) => td.ts,
+        };
+
+        if ts > req.start_at {
+          yield entry.into();
+        }
+
+        idx += 1;
+      }
+
+      loop {
+        let new_count = tf.count()? as usize;
+        if new_count > count {
+          count = new_count;
+          while idx < count {
+            let entry = tf.read_at(idx)?;
+            yield entry.into();
+            idx += 1;
+          }
+        }
+        sleep(Duration::from_secs(1)).await;
+      }
+    };
+
+    Ok(Response::new(
+      Box::pin(output) as Self::DownloadTrackStreamStream
+    ))
+  }
+
+  async fn upload_track_stream(
+    &self,
+    request: Request<Streaming<UploadTrackStreamRequest>>,
+  ) -> Result<Response<Self::UploadTrackStreamStream>, Status> {
     let remote = request.remote_addr().unwrap();
     let remote = format!("track_stream:{:?}", remote);
     info!("[{remote}] client connected");
@@ -111,8 +157,8 @@ impl Track for TrackService {
 
                 let entry: TrackFileEntry = msg.into();
                 tf.append(&entry)?;
-                let msg = TrackStreamResponse {
-                  ack: Some(TrackStreamAck {
+                let msg = UploadTrackStreamResponse {
+                  ack: Some(UploadTrackStreamAck {
                     request_id,
                     echo_response: None
                   })
@@ -126,8 +172,8 @@ impl Track for TrackService {
                   client_timestamp_us: client_ts,
                   server_timestamp_us: server_ts,
                 };
-                let msg = TrackStreamResponse {
-                  ack: Some(TrackStreamAck {
+                let msg = UploadTrackStreamResponse {
+                  ack: Some(UploadTrackStreamAck {
                     request_id,
                     echo_response: Some(resp)
                   })
@@ -141,7 +187,9 @@ impl Track for TrackService {
       info!("[{remote}] client disconnected");
     };
 
-    Ok(Response::new(Box::pin(output) as Self::TrackStreamStream))
+    Ok(Response::new(
+      Box::pin(output) as Self::UploadTrackStreamStream
+    ))
   }
 
   async fn get_track(

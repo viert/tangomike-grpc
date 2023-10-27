@@ -50,12 +50,12 @@ message EchoResponse {
   uint64 server_timestamp_us = 2;
 }
 
-message TrackStreamAck {
+message UploadTrackStreamAck {
   uint64 request_id = 1;
   EchoResponse echo_response = 2;
 }
 
-message TrackStreamRequest {
+message UploadTrackStreamRequest {
   uint64 request_id = 1;
   oneof union {
     TrackMessage track_message = 2;
@@ -63,8 +63,8 @@ message TrackStreamRequest {
   }
 }
 
-message TrackStreamResponse {
-  TrackStreamAck ack = 1;
+message UploadTrackStreamResponse {
+  UploadTrackStreamAck ack = 1;
 }
 
 message TrackRequest {
@@ -79,7 +79,13 @@ message TrackResponse {
   repeated TouchDown touchdowns = 5;
 }
 
+message DownloadTrackStreamRequest {
+  string flight_id = 1;
+  uint64 start_at = 2;
+}
+
 service Track {
-  rpc TrackStream(stream TrackStreamRequest) returns (stream TrackStreamResponse);
+  rpc UploadTrackStream(stream UploadTrackStreamRequest) returns (stream UploadTrackStreamResponse);
+  rpc DownloadTrackStream(DownloadTrackStreamRequest) returns (stream TrackMessage);
   rpc GetTrack(TrackRequest) returns (TrackResponse);
 }

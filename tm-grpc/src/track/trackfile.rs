@@ -137,14 +137,12 @@ impl TrackFile {
   }
 
   fn make_entry_buf() -> Vec<u8> {
-    let mut buf = vec![];
-    buf.resize(Self::entry_size(), 0);
+    let buf = vec![0; Self::entry_size()];
     buf
   }
 
   fn make_header_buf() -> Vec<u8> {
-    let mut buf = vec![];
-    buf.resize(Self::header_size(), 0);
+    let buf = vec![0; Self::header_size()];
     buf
   }
 

@@ -93,6 +93,47 @@ pub enum TrackFileEntry {
   TouchDown(TouchDown),
 }
 
+impl From<TrackFileEntry> for TrackMessage {
+  fn from(value: TrackFileEntry) -> Self {
+    match value {
+      TrackFileEntry::TrackPoint(tp) => Self {
+        union: Some(Union::Point(tangomike::TrackPoint {
+          ts: tp.ts,
+          lat: tp.lat,
+          lng: tp.lng,
+          hdg_true: tp.hdg_true,
+          alt_amsl: tp.alt_amsl,
+          alt_agl: tp.alt_agl,
+          gnd_height: tp.gnd_height,
+          crs: tp.crs,
+          ias: tp.ias,
+          tas: tp.tas,
+          gs: tp.gs,
+          ap_master: tp.ap_master,
+          gear_pct: tp.gear_pct,
+          flaps: tp.flaps,
+          on_gnd: tp.on_gnd,
+          on_rwy: tp.on_rwy,
+          wind_vel: tp.wind_vel,
+          wind_dir: tp.wind_dir,
+        })),
+      },
+      TrackFileEntry::TouchDown(td) => Self {
+        union: Some(Union::TouchDown(tangomike::TouchDown {
+          ts: td.ts,
+          bank: td.bank,
+          hdg_mag: td.hdg_mag,
+          hdg_true: td.hdg_true,
+          vel_nrm: td.vel_nrm,
+          pitch: td.pitch,
+          lat: td.lat,
+          lng: td.lng,
+        })),
+      },
+    }
+  }
+}
+
 impl From<TrackMessage> for TrackFileEntry {
   fn from(value: TrackMessage) -> Self {
     match value.union.unwrap() {
