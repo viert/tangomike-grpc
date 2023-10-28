@@ -84,8 +84,15 @@ message DownloadTrackStreamRequest {
   uint64 start_at = 2;
 }
 
+message NoParams {}
+
+message ActiveFlightsResponse {
+  repeated string flight_ids = 1;
+}
+
 service Track {
   rpc UploadTrackStream(stream UploadTrackStreamRequest) returns (stream UploadTrackStreamResponse);
   rpc DownloadTrackStream(DownloadTrackStreamRequest) returns (stream TrackMessage);
   rpc GetTrack(TrackRequest) returns (TrackResponse);
+  rpc GetActiveFlights(NoParams) returns (ActiveFlightsResponse);
 }

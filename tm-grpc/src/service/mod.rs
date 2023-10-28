@@ -2,11 +2,14 @@ pub mod meta;
 pub mod tangomike {
   tonic::include_proto!("tangomike");
 }
+mod state;
+
 use self::{
   meta::FlightMeta,
+  state::ServiceState,
   tangomike::{
-    track_message, track_server::Track, upload_track_stream_request::Union,
-    DownloadTrackStreamRequest, EchoResponse, TrackMessage, TrackRequest, TrackResponse,
+    track_message, track_server::Track, upload_track_stream_request::Union, ActiveFlightsResponse,
+    DownloadTrackStreamRequest, EchoResponse, NoParams, TrackMessage, TrackRequest, TrackResponse,
     UploadTrackStreamAck, UploadTrackStreamRequest, UploadTrackStreamResponse,
   },
 };
@@ -19,7 +22,10 @@ use chrono::Utc;
 use log::{error, info};
 use std::{pin::Pin, sync::Arc, time::Duration};
 use tokio::{
-  sync::mpsc::{self, error::TryRecvError},
+  sync::{
+    mpsc::{self, error::TryRecvError},
+    RwLock,
+  },
   time::sleep,
 };
 use tokio_stream::Stream;
@@ -29,6 +35,7 @@ use tonic::{Request, Response, Status, Streaming};
 pub struct TrackService {
   geo: Arc<GeoData>,
   store: TrackStore,
+  state: Arc<RwLock<ServiceState>>,
 }
 
 impl TrackService {
@@ -36,6 +43,7 @@ impl TrackService {
     Self {
       geo: Arc::new(geo),
       store,
+      state: Arc::new(RwLock::new(Default::default())),
     }
   }
 }
@@ -108,7 +116,11 @@ impl Track for TrackService {
     let (tx, rx) = mpsc::channel(100);
     tokio::spawn(async move { proxy_requests(stream, tx).await });
 
+    let state = self.state.clone();
+
     let output = async_stream::try_stream! {
+      state.write().await.add_active_flight(&meta.flight_id);
+
       let mut rx = rx;
       loop {
         let res = rx.try_recv();
@@ -185,11 +197,27 @@ impl Track for TrackService {
         }
       }
       info!("[{remote}] client disconnected");
+      state.write().await.remove_active_flight(&meta.flight_id);
     };
 
     Ok(Response::new(
       Box::pin(output) as Self::UploadTrackStreamStream
     ))
+  }
+
+  async fn get_active_flights(
+    &self,
+    _: Request<NoParams>,
+  ) -> Result<Response<ActiveFlightsResponse>, Status> {
+    let flight_ids: Vec<String> = self
+      .state
+      .write()
+      .await
+      .active_flights
+      .iter()
+      .cloned()
+      .collect();
+    Ok(Response::new(ActiveFlightsResponse { flight_ids }))
   }
 
   async fn get_track(
