@@ -28,7 +28,7 @@ impl TryFrom<&MetadataMap> for FlightMeta {
   fn try_from(value: &MetadataMap) -> Result<Self, Self::Error> {
     let flight_id = extract_key(value, "x-flight-id")?;
     let atc_id = extract_key(value, "x-atc-id")?;
-    let auth_token = extract_key(value, "auth-token")?;
+    let auth_token = extract_key(value, "x-auth-token")?;
     let atc_type = extract_key(value, "x-atc-type").ok();
     let atc_flight_number = extract_key(value, "x-atc-flight-number").ok();
     let aircraft_title = extract_key(value, "x-title").ok();
