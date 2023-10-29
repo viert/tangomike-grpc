@@ -3,7 +3,7 @@ syntax = "proto3";
 package tangomike;
 
 message TrackPoint {
-  uint64   ts = 1;
+  uint64  ts = 1;
   double  lat = 2;
   double  lng = 3;
   double  hdg_true = 4;

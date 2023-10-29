@@ -118,13 +118,18 @@ impl Track for TrackService {
       .check_flight_id(&meta.flight_id, &meta.auth_token)
       .await;
 
-    if let Ok(check) = check {
-      if !check {
-        return Err(Status::unauthenticated("invalid flight id or auth token"));
+    match check {
+      Ok(check) => {
+        if !check {
+          return Err(Status::unauthenticated("invalid flight id or auth token"));
+        }
       }
-    } else {
-      return Err(Status::internal("can't check flight permissions"));
-    }
+      Err(err) => {
+        return Err(Status::internal(format!(
+          "can't check flight permissions: {err}"
+        )));
+      }
+    };
 
     let stream = request.into_inner();
     let mut tf = self.store.open_or_create(&meta.flight_id)?;
