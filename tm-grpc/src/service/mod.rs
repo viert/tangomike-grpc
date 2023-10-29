@@ -156,64 +156,67 @@ impl Track for TrackService {
           },
           Ok(msg) => {
             let request_id = msg.request_id;
-            match msg.union.unwrap() {
-              Union::TrackMessage(msg) => {
-                let union = &msg.union;
-
-                match union {
-                  Some(union) => match union {
-                    track_message::Union::Point(pt) => {
-                      if pt.on_gnd {
-                        let dep = tf.get_departure()?;
-                        if dep.is_empty() {
-                          let closest = geo.closest_airport(pt.lng, pt.lat);
+            if let Some(union) = msg.union {
+              match union {
+                Union::TrackMessage(msg) => {
+                  let union = &msg.union;
+                  match union {
+                    Some(union) => match union {
+                      track_message::Union::Point(pt) => {
+                        if pt.on_gnd {
+                          let dep = tf.get_departure()?;
+                          if dep.is_empty() {
+                            let closest = geo.closest_airport(pt.lng, pt.lat);
+                            if let Some(arpt) = closest {
+                              tf.set_departure(&arpt.ident)?;
+                            }
+                          }
+                        }
+                      },
+                      track_message::Union::TouchDown(td) => {
+                        let arr = tf.get_arrival()?;
+                        if arr.is_empty() {
+                          let closest = geo.closest_airport(td.lng, td.lat);
                           if let Some(arpt) = closest {
-                            tf.set_departure(&arpt.ident)?;
+                            tf.set_arrival(&arpt.ident)?;
                           }
                         }
                       }
                     },
-                    track_message::Union::TouchDown(td) => {
-                      let arr = tf.get_arrival()?;
-                      if arr.is_empty() {
-                        let closest = geo.closest_airport(td.lng, td.lat);
-                        if let Some(arpt) = closest {
-                          tf.set_arrival(&arpt.ident)?;
-                        }
-                      }
+                    None => {
+                      error!("got an empty request message");
+                      break;
                     }
-                  },
-                  None => {
-                    error!("got an empty request message");
-                    break;
                   }
-                }
 
-                let entry: TrackFileEntry = msg.into();
-                tf.append(&entry)?;
-                let msg = UploadTrackStreamResponse {
-                  ack: Some(UploadTrackStreamAck {
-                    request_id,
-                    echo_response: None
-                  })
-                };
-                yield msg;
-              },
-              Union::EchoRequest(req) => {
-                let client_ts = req.timestamp_us;
-                let server_ts = Utc::now().timestamp_micros() as u64;
-                let resp = EchoResponse {
-                  client_timestamp_us: client_ts,
-                  server_timestamp_us: server_ts,
-                };
-                let msg = UploadTrackStreamResponse {
-                  ack: Some(UploadTrackStreamAck {
-                    request_id,
-                    echo_response: Some(resp)
-                  })
-                };
-                yield msg;
-              },
+                  let entry: TrackFileEntry = msg.into();
+                  tf.append(&entry)?;
+                  let msg = UploadTrackStreamResponse {
+                    ack: Some(UploadTrackStreamAck {
+                      request_id,
+                      echo_response: None
+                    })
+                  };
+                  yield msg;
+                },
+                Union::EchoRequest(req) => {
+                  let client_ts = req.timestamp_us;
+                  let server_ts = Utc::now().timestamp_micros() as u64;
+                  let resp = EchoResponse {
+                    client_timestamp_us: client_ts,
+                    server_timestamp_us: server_ts,
+                  };
+                  let msg = UploadTrackStreamResponse {
+                    ack: Some(UploadTrackStreamAck {
+                      request_id,
+                      echo_response: Some(resp)
+                    })
+                  };
+                  yield msg;
+                },
+              }
+            } else {
+              error!("malformed track message, union is empty")
             }
           }
         }

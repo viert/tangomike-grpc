@@ -25,6 +25,6 @@ impl ApiConnect {
       .send()
       .await?;
     let status = res.status();
-    Ok(status.as_u16() == 200)
+    Ok(status.is_success())
   }
 }
