@@ -52,7 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   };
 
   let store = TrackStore::new(&cfg.track);
-  let svc = TrackService::new(geo, store);
+  let svc = TrackService::new(geo, store, &cfg.api.base_uri);
   let svc = TrackServer::new(svc);
 
   info!("starting grpc service...");

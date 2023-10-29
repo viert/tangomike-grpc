@@ -53,6 +53,11 @@ impl Default for ServiceConfig {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct ApiConfig {
+  pub base_uri: String,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Config {
   #[serde(default)]
   pub track: TrackConfig,
@@ -60,6 +65,7 @@ pub struct Config {
   pub log: LogConfig,
   #[serde(default)]
   pub service: ServiceConfig,
+  pub api: ApiConfig,
 }
 
 pub fn read_in_config<P: AsRef<Path>>(filename: P) -> Result<Config, Error> {

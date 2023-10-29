@@ -1,3 +1,4 @@
+pub mod apiconnect;
 pub mod config;
 pub mod geodata;
 pub mod service;

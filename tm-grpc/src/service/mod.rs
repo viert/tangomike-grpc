@@ -14,6 +14,7 @@ use self::{
   },
 };
 use crate::{
+  apiconnect::ApiConnect,
   geodata::GeoData,
   track::{entry::TrackFileEntry, store::TrackStore},
   util::proxy_requests,
@@ -36,14 +37,17 @@ pub struct TrackService {
   geo: Arc<GeoData>,
   store: TrackStore,
   state: Arc<RwLock<ServiceState>>,
+  api: ApiConnect,
 }
 
 impl TrackService {
-  pub fn new(geo: GeoData, store: TrackStore) -> Self {
+  pub fn new(geo: GeoData, store: TrackStore, api_base_uri: &str) -> Self {
+    let api = ApiConnect::new(api_base_uri);
     Self {
       geo: Arc::new(geo),
       store,
       state: Arc::new(RwLock::new(Default::default())),
+      api,
     }
   }
 }
@@ -108,6 +112,19 @@ impl Track for TrackService {
     info!("[{remote}] client connected");
 
     let meta: FlightMeta = request.metadata().try_into()?;
+
+    let check = self
+      .api
+      .check_flight_id(&meta.flight_id, &meta.auth_token)
+      .await;
+
+    if let Ok(check) = check {
+      if !check {
+        return Err(Status::unauthenticated("invalid flight id or auth token"));
+      }
+    } else {
+      return Err(Status::internal("can't check flight permissions"));
+    }
 
     let stream = request.into_inner();
     let mut tf = self.store.open_or_create(&meta.flight_id)?;

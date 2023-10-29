@@ -1,6 +1,7 @@
 use tonic::{metadata::MetadataMap, Status};
 
 pub struct FlightMeta {
+  pub auth_token: String,
   pub flight_id: String,
   pub atc_id: String,
   pub atc_type: Option<String>,
@@ -27,6 +28,7 @@ impl TryFrom<&MetadataMap> for FlightMeta {
   fn try_from(value: &MetadataMap) -> Result<Self, Self::Error> {
     let flight_id = extract_key(value, "x-flight-id")?;
     let atc_id = extract_key(value, "x-atc-id")?;
+    let auth_token = extract_key(value, "auth-token")?;
     let atc_type = extract_key(value, "x-atc-type").ok();
     let atc_flight_number = extract_key(value, "x-atc-flight-number").ok();
     let aircraft_title = extract_key(value, "x-title").ok();
@@ -36,6 +38,7 @@ impl TryFrom<&MetadataMap> for FlightMeta {
       atc_type,
       atc_flight_number,
       aircraft_title,
+      auth_token,
     })
   }
 }
