@@ -143,6 +143,14 @@ impl Track for TrackService {
     let output = async_stream::try_stream! {
       state.write().await.add_active_flight(&meta.flight_id);
 
+      let msg = UploadTrackStreamResponse {
+        ack: Some(UploadTrackStreamAck {
+          request_id: 0,
+          echo_response: None
+        })
+      };
+      yield msg;
+
       let mut rx = rx;
       loop {
         let res = rx.try_recv();
