@@ -37,6 +37,7 @@ impl TrackStore {
 
   pub fn open(&self, flight_id: &str) -> Result<TrackFile, TrackFileError> {
     let path = self.target_dir(flight_id);
+    let path = path.join(format!("{flight_id}.bin"));
     TrackFile::open(path)
   }
 }
