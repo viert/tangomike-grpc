@@ -10,6 +10,7 @@ pub enum TrackFileError {
   InsufficientDataLength(String, usize),
   IndexError(usize),
   NotFound(String),
+  InvalidFlightId(&'static str),
 }
 
 impl Display for TrackFileError {
@@ -29,6 +30,9 @@ impl Display for TrackFileError {
       }
       TrackFileError::NotFound(filename) => {
         write!(f, "Track file {filename} not found")
+      }
+      TrackFileError::InvalidFlightId(err) => {
+        write!(f, "FlightId is incorrect: {err}")
       }
     }
   }
