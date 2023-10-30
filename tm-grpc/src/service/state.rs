@@ -13,4 +13,8 @@ impl ServiceState {
   pub fn remove_active_flight(&mut self, flight_id: &str) {
     self.active_flights.remove(flight_id);
   }
+
+  pub fn is_active(&self, flight_id: &str) -> bool {
+    self.active_flights.contains(flight_id)
+  }
 }

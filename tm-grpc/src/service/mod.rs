@@ -66,6 +66,8 @@ impl Track for TrackService {
   ) -> Result<Response<Self::DownloadTrackStreamStream>, Status> {
     let req = request.into_inner();
     let tf = self.store.open(&req.flight_id)?;
+    let state = self.state.clone();
+
     let output = async_stream::try_stream! {
       let mut count = tf.count()? as usize;
       let mut idx = 0;
@@ -94,6 +96,11 @@ impl Track for TrackService {
             idx += 1;
           }
         }
+
+        if !state.read().await.is_active(&req.flight_id) {
+          break;
+        }
+
         sleep(Duration::from_secs(1)).await;
       }
     };
