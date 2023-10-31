@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package tangomike;
 
+// TODO move ts into TrackMessage
 message TrackPoint {
   uint64  ts = 1;
   double  lat = 2;
@@ -23,6 +24,7 @@ message TrackPoint {
   double  wind_dir = 18;
 }
 
+// TODO move ts into TrackMessage
 message TouchDown {
   uint64 ts = 1;
   double bank = 2;
