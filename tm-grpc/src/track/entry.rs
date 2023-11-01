@@ -36,7 +36,6 @@ pub struct TrackPoint {
 impl From<TrackPoint> for tangomike::TrackPoint {
   fn from(value: TrackPoint) -> Self {
     Self {
-      ts: value.ts,
       lat: value.lat,
       lng: value.lng,
       hdg_true: value.hdg_true,
@@ -74,7 +73,6 @@ pub struct TouchDown {
 impl From<TouchDown> for tangomike::TouchDown {
   fn from(value: TouchDown) -> Self {
     Self {
-      ts: value.ts,
       bank: value.bank,
       hdg_mag: value.hdg_mag,
       hdg_true: value.hdg_true,
@@ -97,8 +95,8 @@ impl From<TrackFileEntry> for TrackMessage {
   fn from(value: TrackFileEntry) -> Self {
     match value {
       TrackFileEntry::TrackPoint(tp) => Self {
+        ts: tp.ts,
         union: Some(Union::Point(tangomike::TrackPoint {
-          ts: tp.ts,
           lat: tp.lat,
           lng: tp.lng,
           hdg_true: tp.hdg_true,
@@ -119,8 +117,8 @@ impl From<TrackFileEntry> for TrackMessage {
         })),
       },
       TrackFileEntry::TouchDown(td) => Self {
+        ts: td.ts,
         union: Some(Union::TouchDown(tangomike::TouchDown {
-          ts: td.ts,
           bank: td.bank,
           hdg_mag: td.hdg_mag,
           hdg_true: td.hdg_true,
@@ -138,7 +136,7 @@ impl From<TrackMessage> for TrackFileEntry {
   fn from(value: TrackMessage) -> Self {
     match value.union.unwrap() {
       Union::Point(point) => Self::TrackPoint(TrackPoint {
-        ts: point.ts,
+        ts: value.ts,
         lat: point.lat,
         lng: point.lng,
         hdg_true: point.hdg_true,
@@ -159,7 +157,7 @@ impl From<TrackMessage> for TrackFileEntry {
         distance: 0.0,
       }),
       Union::TouchDown(td) => Self::TouchDown(TouchDown {
-        ts: td.ts,
+        ts: value.ts,
         bank: td.bank,
         hdg_mag: td.hdg_mag,
         hdg_true: td.hdg_true,

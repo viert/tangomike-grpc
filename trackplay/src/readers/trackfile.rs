@@ -44,7 +44,7 @@ impl TrackReader for TrackFileReader {
       tokio::spawn(async move {
         for i in 0..count {
           let res = tf.read_at(i as usize);
-          if let Ok(mut entry) = res {
+          if let Ok(entry) = res {
             let adj_now = Utc::now().timestamp_millis() as u64 - timediff;
             let ts = match &entry {
               TrackFileEntry::TrackPoint(tp) => tp.ts,
@@ -57,8 +57,9 @@ impl TrackReader for TrackFileReader {
               sleep(sleep_time).await;
             }
 
-            // TODO move ts into TrackMessage and adjust message ts upon send
-            let res = tx.send(entry.into()).await;
+            let mut msg: TrackMessage = entry.into();
+            msg.ts = Utc::now().timestamp_millis() as u64;
+            let res = tx.send(msg).await;
             if let Err(err) = res {
               println!("Error sending entry: {err}");
             }

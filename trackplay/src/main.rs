@@ -1,6 +1,6 @@
 use clap::{builder::PossibleValue, Parser, ValueEnum};
 use trackplay::{
-  readers::{trackfile::TrackFileReader, TrackReader},
+  readers::{simwatch::SimwatchReader, trackfile::TrackFileReader, TrackReader},
   sender::Sender,
 };
 
@@ -60,7 +60,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       }
       Box::new(TrackFileReader::new(&path))
     }
-    ServiceType::Simwatch => unimplemented!(),
+    ServiceType::Simwatch => {
+      let mut reader = SimwatchReader::new(&path);
+      reader.prepare().await?;
+      atc_id = reader.atc_id();
+      Box::new(reader)
+    }
   };
 
   if let Some(atc_id) = atc_id {

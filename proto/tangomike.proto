@@ -4,42 +4,41 @@ package tangomike;
 
 // TODO move ts into TrackMessage
 message TrackPoint {
-  uint64  ts = 1;
-  double  lat = 2;
-  double  lng = 3;
-  double  hdg_true = 4;
-  double  alt_amsl = 5;
-  double  alt_agl = 6;
-  double  gnd_height = 7;
-  double  crs = 8;
-  double  ias = 9;
-  double  tas = 10;
-  double  gs = 11;
-  bool    ap_master = 12;
-  int64   gear_pct = 13;
-  int64   flaps = 14;
-  bool    on_gnd = 15;
-  bool    on_rwy = 16;
-  double  wind_vel = 17;
-  double  wind_dir = 18;
+  double  lat = 1;
+  double  lng = 2;
+  double  hdg_true = 3;
+  double  alt_amsl = 4;
+  double  alt_agl = 5;
+  double  gnd_height = 6;
+  double  crs = 7;
+  double  ias = 8;
+  double  tas = 9;
+  double  gs = 10;
+  bool    ap_master = 11;
+  int64   gear_pct = 12;
+  int64   flaps = 13;
+  bool    on_gnd = 14;
+  bool    on_rwy = 15;
+  double  wind_vel = 16;
+  double  wind_dir = 17;
 }
 
 // TODO move ts into TrackMessage
 message TouchDown {
-  uint64 ts = 1;
-  double bank = 2;
-  double hdg_mag = 3;
-  double hdg_true = 4;
-  double vel_nrm = 5;
-  double pitch = 6;
-  double lat = 7;
-  double lng = 8;
+  double bank = 1;
+  double hdg_mag = 2;
+  double hdg_true = 3;
+  double vel_nrm = 4;
+  double pitch = 5;
+  double lat = 6;
+  double lng = 7;
 }
 
 message TrackMessage {
+  uint64 ts = 1;
   oneof union {
-    TrackPoint point = 1;
-    TouchDown touch_down = 2;
+    TrackPoint point = 2;
+    TouchDown touch_down = 3;
   }
 }
 
