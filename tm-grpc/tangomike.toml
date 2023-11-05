@@ -5,7 +5,7 @@ folder = "/var/lib/tangomike/tracks"
 level = "debug"
 
 [service]
-bind = "0.0.0.0:9100"
+bind = "0.0.0.0:9200"
 
 [api]
 base_uri = "http://127.0.0.1:8000"
