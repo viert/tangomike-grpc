@@ -39,6 +39,9 @@ pub struct Args {
   #[arg(long)]
   atc_id: Option<String>,
 
+  #[arg(long)]
+  flight_id: Option<String>,
+
   #[arg(short)]
   service_type: ServiceType,
 }
@@ -69,7 +72,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   };
 
   if let Some(atc_id) = atc_id {
-    let flight_id = sender.create_flight().await?;
+    let flight_id = if let Some(flight_id) = args.flight_id {
+      flight_id
+    } else {
+      sender.create_flight().await?
+    };
     println!("flight created with id {flight_id}");
     let rx = reader.read().await?;
     sender.send(&flight_id, &atc_id, rx).await?;
